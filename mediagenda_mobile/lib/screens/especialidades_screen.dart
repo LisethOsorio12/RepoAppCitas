@@ -108,6 +108,15 @@ class _EspecialidadesScreenState
         backgroundColor: azulPrincipal,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: 'Mis citas',
+            icon: const Icon(Icons.calendar_month),
+            onPressed: () {
+              Navigator.pushNamed(context, '/mis-citas');
+            },
+          ),
+        ],
       ),
 
       body: FutureBuilder<List<Especialidad>>(

@@ -1,15 +1,25 @@
+
 package com.mediagenda;
 
 import com.mediagenda.entity.Especialidad;
 import com.mediagenda.entity.Profesional;
+import com.mediagenda.entity.Cita;
+
 import com.mediagenda.repository.EspecialidadRepository;
 import com.mediagenda.repository.ProfesionalRepository;
+import com.mediagenda.repository.CitaRepository;
+
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.StartupEvent;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.DayOfWeek;
 
 @Startup
 @ApplicationScoped
@@ -21,120 +31,190 @@ public class DataInitializer {
     @Inject
     ProfesionalRepository profesionalRepository;
 
+    @Inject
+    CitaRepository citaRepository;
+
     @Transactional
     void init(@Observes StartupEvent event) {
 
         // ==========================================
-        // CREAR ESPECIALIDADES
+        // 1. CREAR ESPECIALIDADES
         // ==========================================
 
-        if (especialidadRepository.count() == 0) {
+        crearEspecialidad(
+                "Cardiología",
+                "Especialidad médica relacionada con el corazón."
+        );
 
-            Especialidad cardiologia = new Especialidad(
-                    "Cardiología",
-                    "Especialidad médica relacionada con el corazón.",
-                    true
-            );
+        crearEspecialidad(
+                "Dermatología",
+                "Especialidad médica relacionada con la piel."
+        );
 
-            Especialidad dermatologia = new Especialidad(
-                    "Dermatología",
-                    "Especialidad médica relacionada con la piel.",
-                    true
-            );
+        crearEspecialidad(
+                "Pediatría",
+                "Atención médica especializada para niños."
+        );
 
-            Especialidad pediatria = new Especialidad(
-                    "Pediatría",
-                    "Atención médica especializada para niños.",
-                    true
-            );
-
-            Especialidad medicinaGeneral = new Especialidad(
-                    "Medicina General",
-                    "Atención médica integral y preventiva.",
-                    true
-            );
-
-            especialidadRepository.persist(cardiologia);
-            especialidadRepository.persist(dermatologia);
-            especialidadRepository.persist(pediatria);
-            especialidadRepository.persist(medicinaGeneral);
-        }
+        crearEspecialidad(
+                "Medicina General",
+                "Atención médica integral y preventiva."
+        );
 
         // ==========================================
-        // BUSCAR ESPECIALIDADES
+        // 2. BUSCAR ESPECIALIDADES
         // ==========================================
 
         Especialidad cardiologia =
-                especialidadRepository.find("nombre", "Cardiología")
-                        .firstResult();
+                especialidadRepository.find(
+                        "nombre", "Cardiología"
+                ).firstResult();
 
         Especialidad dermatologia =
-                especialidadRepository.find("nombre", "Dermatología")
-                        .firstResult();
+                especialidadRepository.find(
+                        "nombre", "Dermatología"
+                ).firstResult();
 
         Especialidad pediatria =
-                especialidadRepository.find("nombre", "Pediatría")
-                        .firstResult();
+                especialidadRepository.find(
+                        "nombre", "Pediatría"
+                ).firstResult();
 
         Especialidad medicinaGeneral =
-                especialidadRepository.find("nombre", "Medicina General")
-                        .firstResult();
+                especialidadRepository.find(
+                        "nombre", "Medicina General"
+                ).firstResult();
 
         // ==========================================
-        // CREAR PROFESIONALES
+        // 3. CREAR PROFESIONALES
         // ==========================================
 
-        if (profesionalRepository.count() == 0) {
+        crearProfesional(
+                "Dra. Laura Martínez",
+                "Especialista en enfermedades cardiovasculares.",
+                cardiologia
+        );
 
-            profesionalRepository.persist(
-                    new Profesional(
-                            "Dra. Laura Martínez",
-                            "Médica especialista en cardiología.",
-                            true,
-                            true,
-                            cardiologia
-                    )
+        crearProfesional(
+                "Dr. Carlos Rodríguez",
+                "Especialista en cuidado y salud de la piel.",
+                dermatologia
+        );
+
+        crearProfesional(
+                "Dra. Ana Gómez",
+                "Especialista en atención médica infantil.",
+                pediatria
+        );
+
+        crearProfesional(
+                "Dr. Juan Pérez",
+                "Médico especialista en atención primaria.",
+                medicinaGeneral
+        );
+
+        crearProfesional(
+                "Dra. María López",
+                "Médica especialista en atención general y preventiva.",
+                medicinaGeneral
+        );
+
+        // ==========================================
+        // 4. CREAR UNA CITA PARA CADA PROFESIONAL
+        // ==========================================
+
+        for (Profesional profesional :
+                profesionalRepository.listAll()) {
+
+            // Verificar si el paciente ya tiene una cita
+            // con este profesional.
+            long citasExistentes = citaRepository.count(
+                    "pacienteId = ?1 and profesional.id = ?2",
+                    1L,
+                    profesional.id
             );
 
-            profesionalRepository.persist(
-                    new Profesional(
-                            "Dr. Carlos Rodríguez",
-                            "Médico especialista en cardiología clínica.",
-                            true,
-                            true,
-                            cardiologia
-                    )
-            );
+            // No duplicar citas existentes.
+            if (citasExistentes == 0) {
 
-            profesionalRepository.persist(
-                    new Profesional(
-                            "Dra. Ana Gómez",
-                            "Médica especialista en dermatología.",
-                            true,
-                            true,
-                            dermatologia
-                    )
-            );
+                // Buscar una fecha futura en día hábil.
+                LocalDate fecha = LocalDate.now().plusDays(7);
 
-            profesionalRepository.persist(
-                    new Profesional(
-                            "Dr. Juan Pérez",
-                            "Médico especialista en pediatría.",
-                            true,
-                            true,
-                            pediatria
-                    )
-            );
+                while (
+                        fecha.getDayOfWeek() == DayOfWeek.SATURDAY ||
+                                fecha.getDayOfWeek() == DayOfWeek.SUNDAY
+                ) {
+                    fecha = fecha.plusDays(1);
+                }
 
-            profesionalRepository.persist(
-                    new Profesional(
-                            "Dra. María López",
-                            "Médica de atención general.",
-                            true,
-                            true,
-                            medicinaGeneral
-                    )
-            );
+                // Crear cita a las 9:00 a. m.
+                LocalDateTime fechaHora =
+                        fecha.atTime(9, 0);
+
+                Cita cita = new Cita(
+                        1L,
+                        profesional,
+                        fechaHora,
+                        "VIGENTE"
+                );
+
+                citaRepository.persist(cita);
+            }
+        }
+    }
+
+    // ==========================================
+    // MÉTODO PARA CREAR ESPECIALIDADES
+    // ==========================================
+
+    private void crearEspecialidad(
+            String nombre,
+            String descripcion) {
+
+        long existentes = especialidadRepository.count(
+                "nombre", nombre
+        );
+
+        if (existentes == 0) {
+
+            Especialidad especialidad = new Especialidad();
+
+            especialidad.nombre = nombre;
+            especialidad.descripcion = descripcion;
+            especialidad.activa = true;
+
+            especialidadRepository.persist(especialidad);
+        }
+    }
+
+    // ==========================================
+    // MÉTODO PARA CREAR PROFESIONALES
+    // ==========================================
+
+    private void crearProfesional(
+            String nombre,
+            String informacion,
+            Especialidad especialidad) {
+
+        if (especialidad == null) {
+            return;
+        }
+
+        long existentes = profesionalRepository.count(
+                "nombre", nombre
+        );
+
+        if (existentes == 0) {
+
+            Profesional profesional = new Profesional();
+
+            profesional.nombre = nombre;
+            profesional.informacionProfesional = informacion;
+            profesional.activo = true;
+            profesional.disponible = true;
+            profesional.especialidad = especialidad;
+
+            profesionalRepository.persist(profesional);
         }
     }
 }
