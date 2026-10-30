@@ -13,10 +13,10 @@ class Especialidad {
 
   factory Especialidad.fromJson(Map<String, dynamic> json) {
     return Especialidad(
-      id: json['id'],
-      nombre: json['nombre'],
-      descripcion: json['descripcion'],
-      activa: json['activa'],
+      id: json['id'] as int,
+      nombre: json['nombre'] as String,
+      descripcion: json['descripcion'] as String,
+      activa: json['activa'] as bool,
     );
   }
 }
