@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -11,7 +12,18 @@ class EspecialidadService {
     try {
       final response = await http.get(
         Uri.parse(baseUrl),
-      );
+        headers: {
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      // Información para diagnosticar la petición
+      print('========== CONSULTA DE ESPECIALIDADES ==========');
+      print('URL: $baseUrl');
+      print('Código de respuesta: ${response.statusCode}');
+      print('Headers: ${response.headers}');
+      print('Respuesta del servidor: ${response.body}');
+      print('================================================');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -21,12 +33,15 @@ class EspecialidadService {
             .toList();
       } else {
         throw Exception(
-          'Error del servidor: ${response.statusCode}',
+          'Error del servidor: ${response.statusCode}. '
+              'Respuesta: ${response.body}',
         );
       }
     } catch (e) {
+      print('ERROR AL CONSULTAR ESPECIALIDADES: $e');
+
       throw Exception(
-        'No se pudo conectar con el servidor: $e',
+        'No se pudieron consultar las especialidades: $e',
       );
     }
   }
